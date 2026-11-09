@@ -27,7 +27,7 @@ Everything is tested with **Flower 1.41**, PyTorch 2.14 and MONAI 1.6 on Python 
 git clone https://github.com/Chiru-CatalinMihail/AITDM_FLOWER_PROJECT_TUTORIAL.git
 cd AITDM_FLOWER_PROJECT_TUTORIAL
 
-# 1. Create .venv and install everything (drop --cpu if you have an NVIDIA GPU)
+# 1. Create .venv and install everything with uv (drop --cpu if you have an NVIDIA GPU)
 bash scripts/setup_env.sh --cpu
 source .venv/bin/activate
 
@@ -84,7 +84,7 @@ git history.
 
 | # | Tutorial | What you learn |
 |---|----------|----------------|
-| 1 | [Environment setup](docs/01_environment_setup.md) | venv, `requirements.txt`, CPU vs GPU PyTorch, Windows/WSL2 |
+| 1 | [Environment setup](docs/01_environment_setup.md) | uv, `pyproject.toml` / `uv.lock`, CPU vs GPU PyTorch, Windows/WSL2 |
 | 2 | [Running Flower](docs/02_running_flower.md) | Simulation (`flwr run`) vs. deployment (SuperLink + SuperNodes in separate terminals) |
 | 3 | [Biased data splits](docs/03_biased_data_splits.md) | IID, label skew (Dirichlet), pathological, quantity skew, natural (per-subject) splits, feature skew, label noise |
 | 4 | [Aggregation strategies](docs/04_aggregation_strategies.md) | FedAvg, FedProx, FedAvgM, FedAdam/Yogi, FedMedian, FedTrimmedAvg, Krum, q-FedAvg, differential privacy; attack experiments |
@@ -98,10 +98,10 @@ git history.
 ```text
 AITDM_FLOWER_PROJECT_TUTORIAL/
 ├── README.md                    <- you are here
-├── requirements.txt             <- pinned dependencies (Flower, PyTorch, MONAI, ...)
-├── requirements-dev.txt         <- + pytest and ruff (tests / CI)
+├── pyproject.toml               <- dependencies (Flower, PyTorch, MONAI, ..., pytest, ruff), managed with uv
+├── uv.lock                      <- exact pinned versions of every package (commit it)
 ├── scripts/
-│   ├── setup_env.sh             <- creates .venv and installs everything
+│   ├── setup_env.sh             <- uv sync: creates .venv and installs everything
 │   ├── run_simulation.sh        <- server + all clients, one command (Simulation Runtime)
 │   ├── run_deployment_local.sh  <- SuperLink + SuperNodes + run, all in one terminal
 │   ├── run_deployment_terminals.sh <- one window per component, re-run any of them from a menu

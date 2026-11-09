@@ -217,7 +217,7 @@ Setting `dp-noise-multiplier > 0` wraps **any** strategy in
 --run-config "strategy='fedmedian' dp-noise-multiplier=1.0"   # DP + robustness
 ```
 
-**The privacy budget $\varepsilon$ is computed for you.** For FedAvg-style strategies (`fedavg`, `fedprox`), the server attaches Flower's Rényi-DP accountant (needs the `flwr[dp]` extra, which is already in `requirements.txt`). It prints the cumulative budget after every round and stores it in `metrics.json` under `"privacy"`:
+**The privacy budget $\varepsilon$ is computed for you.** For FedAvg-style strategies (`fedavg`, `fedprox`), the server attaches Flower's Rényi-DP accountant (needs the `flwr[dp]` extra, which is already in `pyproject.toml`). It prints the cumulative budget after every round and stores it in `metrics.json` under `"privacy"`:
 
 ```text
 INFO :      Privacy spent: epsilon=12.301691 at delta=1e-05 after 5 releases

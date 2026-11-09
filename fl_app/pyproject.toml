@@ -7,7 +7,7 @@ name = "aitdm-fl"
 version = "1.0.0"
 description = "AITDM – Federated Learning with Flower, PyTorch and MONAI"
 requires-python = ">=3.11"
-# The exact versions are pinned in ../requirements.txt
+# The exact versions are pinned in ../uv.lock (see ../pyproject.toml)
 dependencies = [
     "flwr[simulation]>=1.41.0",
     "torch>=2.4",

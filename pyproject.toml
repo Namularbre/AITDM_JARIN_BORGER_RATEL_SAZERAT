@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------------------
+# AITDM – Federated Learning starter kit, managed with uv (https://docs.astral.sh/uv/)
+# Python 3.11 – 3.13 is supported (Flower requires >= 3.11).
+#
+#   uv sync --extra cpu      CPU-only PyTorch (small download, works everywhere)
+#   uv sync --extra cuda     default PyTorch build from PyPI (CUDA on Linux)
+#
+# The exact versions of every package are pinned in uv.lock (commit it).
+# Windows users: run everything inside WSL2 (Ubuntu), see docs/01_environment_setup.md
+# ---------------------------------------------------------------------------
+[project]
+name = "aitdm"
+version = "1.0.0"
+description = "AITDM – Federated Learning with Flower, PyTorch and MONAI"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    # --- The Flower app in fl_app/ (installed in editable mode) ------------
+    "aitdm-fl",
+
+    # --- Federated learning (Flower) ---------------------------------------
+    # [simulation] pulls in Ray (Simulation Runtime used by `flwr run .`)
+    # [dp] pulls in dp-accounting (privacy budget epsilon for differential privacy)
+    "flwr[simulation,dp]==1.41.0",
+    "flwr-datasets[vision]==0.6.1",
+
+    # --- Medical imaging ---------------------------------------------------
+    "monai==1.6.1",
+
+    # --- Data handling, metrics and plots ----------------------------------
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+    "tqdm>=4.66",
+
+    # --- Explainability (Stage 2: Grad-CAM, see docs/05_gradcam.md) --------
+    # pytorch-grad-cam: Grad-CAM, Grad-CAM++, Score-CAM, EigenCAM, ...
+    # (pulls in opencv-python-headless and ttach automatically)
+    "grad-cam==1.5.7",
+]
+
+# --- Deep learning: pick ONE PyTorch build with --extra ---------------------
+[project.optional-dependencies]
+cpu = ["torch==2.14.1", "torchvision==0.29.1"]
+cuda = ["torch==2.14.1", "torchvision==0.29.1"]
+
+# Development / CI tools (installed by `uv sync`, skipped with --no-dev)
+[dependency-groups]
+dev = [
+    "pytest==8.3.5",
+    "ruff==0.11.2",
+]
+
+[tool.uv]
+# This repository is a collection of scripts, not a package: only fl_app/ is built.
+package = false
+conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
+
+[tool.uv.workspace]
+members = ["fl_app"]
+
+[tool.uv.sources]
+aitdm-fl = { workspace = true }
+torch = [{ index = "pytorch-cpu", extra = "cpu" }]
+torchvision = [{ index = "pytorch-cpu", extra = "cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

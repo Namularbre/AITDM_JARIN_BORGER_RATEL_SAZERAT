@@ -4,7 +4,7 @@ A clinician will not trust *"melanoma, 87 %"* without knowing **where** the mode
 
 Grad-CAM produces a heat map of the image regions that drove a prediction. It is the most common interpretability tool for CNNs.
 
-Everything you need is already installed: `grad-cam` ([pytorch-grad-cam](https://github.com/jacobgil/pytorch-grad-cam)) is pinned in `requirements.txt`, together with its OpenCV dependency.
+Everything you need is already installed: `grad-cam` ([pytorch-grad-cam](https://github.com/jacobgil/pytorch-grad-cam)) is pinned in `pyproject.toml` / `uv.lock`, together with its OpenCV dependency.
 
 ---
 
@@ -384,9 +384,9 @@ maps = cam(x=images)   # (N, 1, H, W), already upsampled and normalised to [0, 1
 
 Grad-CAM needs convolutional feature maps. For **HAR** (skeleton or sensor sequences, tabular features), `explainability/feature_importance.py` measures which joints / statistics the model relies on (permutation importance, see [tutorial 6](06_har.md#5-explain-it)).
 
-For per-sample explanations use attribution methods such as **SHAP** (`pip install shap`) or **Integrated Gradients** (`pip install captum`). They tell you which joints, sensors or time steps drove a prediction. 
+For per-sample explanations use attribution methods such as **SHAP** (`uv add shap`) or **Integrated Gradients** (`uv add captum`). They tell you which joints, sensors or time steps drove a prediction. 
 
-Add the package to `requirements.txt` with a fixed version so your teammates get the same one.
+Add it with `uv add --no-sync <package>` followed by `uv sync --extra cpu` (or `cuda`), and commit `pyproject.toml` and `uv.lock` so your teammates get the same version.
 
 ## References
 

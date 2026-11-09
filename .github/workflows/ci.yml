@@ -11,19 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.12"
-          cache: pip
+          enable-cache: true
 
       - name: Install (CPU PyTorch)
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install torch==2.14.1 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cpu
-          pip install -r requirements-dev.txt
-          pip install -e fl_app
+        run: uv sync --locked --extra cpu --python 3.12
 
       - name: Lint
         run: .venv/bin/ruff check .

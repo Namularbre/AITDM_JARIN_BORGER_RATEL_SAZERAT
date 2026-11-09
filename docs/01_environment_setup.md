@@ -3,14 +3,16 @@
 Every project ends up with dependency conflicts sooner or later (one library wants
 `numpy<2`, another `numpy>=2`...). To avoid breaking your system Python, install
 everything in a **virtual environment** (venv) that lives in the project folder.
+The project is managed with [uv](https://docs.astral.sh/uv/): the dependencies are declared in
+[`pyproject.toml`](../pyproject.toml) and their exact versions are pinned in `uv.lock`.
 
 ## Requirements
 
 * **Linux or macOS.** On **Windows, use WSL2**: open PowerShell as administrator, run
   `wsl --install`, reboot, open the "Ubuntu" app and follow this guide inside it.
-* **Python 3.11, 3.12 or 3.13** (Flower needs ≥ 3.11). Check with `python3 --version`.
-  * Ubuntu: `sudo apt install python3.12 python3.12-venv`
-  * macOS: `brew install python@3.12`
+* **uv**: `curl -LsSf https://astral.sh/uv/install.sh | sh` (check with `uv --version`).
+* **Python 3.11, 3.12 or 3.13** (Flower needs ≥ 3.11). You do not need to install it yourself:
+  uv downloads Python 3.12 (see `.python-version`) if it is not on your machine.
 * About 2 GB of free disk space for the CPU build, or 6 GB or more for the CUDA build.
 
 ## One-command install
@@ -23,21 +25,21 @@ bash scripts/setup_env.sh --cpu      # CPU-only PyTorch: small download, works e
 bash scripts/setup_env.sh            # default PyTorch build (includes CUDA on Linux)
 ```
 
-If `python3` is the wrong version, choose the interpreter explicitly:
+To use another Python version than 3.12:
 
 ```bash
-PYTHON=python3.12 bash scripts/setup_env.sh --cpu
+PYTHON=3.13 bash scripts/setup_env.sh --cpu
 ```
 
-The script:
+The script runs `uv sync`, which:
 
-1. checks the Python version,
-2. creates `.venv/` in the repository,
-3. installs PyTorch (CPU or default build),
-4. installs everything in [`requirements.txt`](../requirements.txt),
-5. installs the Flower app in `fl_app/` in editable mode (`pip install -e fl_app`), so that
+1. creates `.venv/` in the repository (with a uv-managed Python if needed),
+2. installs PyTorch (CPU or default build, chosen with the `cpu` / `cuda` extra),
+3. installs everything pinned in `uv.lock`, plus `pytest` and `ruff`,
+4. installs the Flower app in `fl_app/` in editable mode (it is a uv workspace member), so that
    `import aitdm_fl` works anywhere (handy for your centralised baseline or a notebook),
-6. prints the versions it installed:
+
+and then prints the versions it installed:
 
 ```text
 === Environment ready ===
@@ -58,6 +60,9 @@ deactivate                       # leave it
 ```
 
 The `scripts/*.sh` files activate `.venv` for you, so you can run them directly.
+Without activating, prefix a command with `uv run --no-sync`, e.g.
+`uv run --no-sync python data_splitting/split_data.py ...` (`--no-sync` keeps the PyTorch
+build you chose; a plain `uv run` would re-sync without the `cpu` extra).
 
 ## Where the code you will edit lives
 
@@ -87,7 +92,7 @@ python -c "import aitdm_fl.task as t, aitdm_fl.server_app as s; print(t.__file__
 Because the app is installed in editable mode ([step 5 above](#one-command-install)), Python always uses these files
 directly. Your edits take effect at the next run, without reinstalling. If the command prints a
 path inside `.venv/lib/.../site-packages/` instead, the app was not installed in editable mode:
-run `pip install -e fl_app` from the repository root.
+run `uv sync --extra cpu` (or `--extra cuda`) from the repository root.
 
 ## What is installed and why
 
@@ -100,31 +105,30 @@ run `pip install -e fl_app` from the repository root.
 | `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `tqdm` | Data handling, metrics (F1, balanced accuracy), plots |
 | `grad-cam` | Grad-CAM / Grad-CAM++ / Score-CAM explanations for Stage 2 (pulls in OpenCV), see [tutorial 5](05_gradcam.md) |
 
-Need another library? Add it to `requirements.txt` **with a version** and re-run
-`bash scripts/setup_env.sh`. The script reuses the existing `.venv`.
+Need another library? Add it with uv, which updates `pyproject.toml` and `uv.lock`
+(commit both so your teammates get the same version):
+
+```bash
+uv add --no-sync shap==0.48.0         # updates pyproject.toml and uv.lock
+uv sync --extra cpu                   # installs it (keep cpu or cuda, as in your setup)
+```
 
 ## Doing it by hand (what the script does)
 
 ```bash
-python3 -m venv .venv
+uv sync --extra cpu                   # or --extra cuda for the default (CUDA) PyTorch build
 source .venv/bin/activate
-pip install --upgrade pip
-pip install torch==2.14.1 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cpu   # CPU only
-pip install -r requirements.txt
-pip install -e fl_app
 ```
 
-## Alternatives
-
-Any environment manager works as long as you install `requirements.txt` into it:
-[uv](https://docs.astral.sh/uv/) (`uv venv && uv pip install -r requirements.txt`), conda or pyenv.
+`uv sync --no-dev` skips `pytest` and `ruff`. Need a `requirements.txt` for another tool?
+`uv export --extra cpu --no-hashes > requirements.txt` writes one from the lock file.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `ERROR: Python 3.11-3.13 required` | Install a supported Python and use `PYTHON=python3.12 bash scripts/setup_env.sh` |
-| `The virtual environment was not created successfully because ensurepip is not available` | `sudo apt install python3.12-venv` (match your Python version) |
+| `ERROR: 'uv' not found` | `curl -LsSf https://astral.sh/uv/install.sh | sh`, then open a new terminal |
+| `The lockfile at uv.lock needs to be updated` | Someone edited `pyproject.toml` without `uv lock`: run `uv lock` and commit `uv.lock` |
 | Very large download / disk full | Use `--cpu`; delete `.venv/` and start again |
 | `CUDA available: False` but you have a GPU | Re-create the venv without `--cpu`; check `nvidia-smi` works |
 | University cluster (FEP) | Run the server and all clients **on the same node and queue**, or use the node's real IP instead of `127.0.0.1`.<br><br>Otherwise, pointing to 0.0.0.0:8080 or 127.0.0.1:8080 is going to point to different actual IPs and this will mean that they are not communicating (server is waiting for the clients and clients give an error of "no server to talk to") |
