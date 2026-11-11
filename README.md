@@ -60,16 +60,32 @@ bash scripts/run_simulation.sh data/partitions/har_camera
 
 See [docs/06_har.md](docs/06_har.md).
 
+**Industrial defect detection instead of medical imaging?** Use the AutoVI dataset from Zenodo:
+
+```bash
+python data_splitting/get_autovi.py --list
+python data_splitting/get_autovi.py pipe_staple pipe_clip
+python data_splitting/autovi_to_npz.py --objects pipe_staple pipe_clip --size 128
+python data_splitting/split_data.py --input data/raw/autovi_128.npz \
+    --x-key images --y-key labels --group-col object \
+    --class-names good,defect --strategy group --num-clients 3 \
+    --out data/partitions/autovi_group
+bash scripts/run_simulation.sh data/partitions/autovi_group
+```
+
+This reproduces the same workflow with a binary defect/no-defect dataset and a realistic object-based partitioning strategy.
+
 ---
 
 ## Data
 
 **No data is stored in this repository** (`data/` is git-ignored). You download what you choose:
 
-| Dataset | What | Source and licence | How |
-|---|---|---|---|
-| DermaMNIST, PneumoniaMNIST, BloodMNIST, ... | 2D medical images, 28–224 px | [MedMNIST v2](https://medmnist.com/) (Yang et al., *Scientific Data* 2023), public on Zenodo. Licence per dataset, e.g. DermaMNIST CC BY-NC 4.0 (from HAM10000), PneumoniaMNIST CC BY 4.0 | automatic with `split_data.py --dataset <name>`, or in advance with `get_data.py --medmnist <name>` |
-| HAR skeletons | 3D skeleton sequences, 5 actions, 3 cameras | subset of [NTU RGB+D](https://rose1.ntu.edu.sg/dataset/actionRecognition/) (Shahroudy et al., CVPR 2016), academic use after accepting its Release Agreement, **not** redistributable | the course subset from Moodle: `get_data.py --har <zip>`; or build it from the official archive: `get_data.py --ntu <zip>` (choose `--actions`, `--cameras`), see [tutorial 6](docs/06_har.md#1-get-the-data) |
+| Dataset                                     | What                                        | Source and licence                                                                                                                                                                        | How                                                                                                                                                                                                           |
+| ------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DermaMNIST, PneumoniaMNIST, BloodMNIST, ... | 2D medical images, 28–224 px                | [MedMNIST v2](https://medmnist.com/) (Yang et al., _Scientific Data_ 2023), public on Zenodo. Licence per dataset, e.g. DermaMNIST CC BY-NC 4.0 (from HAM10000), PneumoniaMNIST CC BY 4.0 | automatic with `split_data.py --dataset <name>`, or in advance with `get_data.py --medmnist <name>`                                                                                                           |
+| AutoVI                                      | industrial RGB defect-detection images       | [Renault AutoVI dataset](https://zenodo.org/records/10459003), public on Zenodo, CC BY-NC-SA 4.0. The task is binary `good` vs `defect`, with one object representing a part or assembly.       | download with `get_autovi.py`, convert to `data/raw/autovi_<size>.npz` with `autovi_to_npz.py`, then split with `split_data.py --input ... --group-col object`                                                            |
+| HAR skeletons                               | 3D skeleton sequences, 5 actions, 3 cameras | subset of [NTU RGB+D](https://rose1.ntu.edu.sg/dataset/actionRecognition/) (Shahroudy et al., CVPR 2016), academic use after accepting its Release Agreement, **not** redistributable     | the course subset from Moodle: `get_data.py --har <zip>`; or build it from the official archive: `get_data.py --ntu <zip>` (choose `--actions`, `--cameras`), see [tutorial 6](docs/06_har.md#1-get-the-data) |
 
 ```bash
 python data_splitting/get_data.py --list      # what is available / already downloaded
@@ -82,14 +98,14 @@ git history.
 
 ## Tutorials
 
-| # | Tutorial | What you learn |
-|---|----------|----------------|
-| 1 | [Environment setup](docs/01_environment_setup.md) | uv, `pyproject.toml` / `uv.lock`, CPU vs GPU PyTorch, Windows/WSL2 |
-| 2 | [Running Flower](docs/02_running_flower.md) | Simulation (`flwr run`) vs. deployment (SuperLink + SuperNodes in separate terminals) |
-| 3 | [Biased data splits](docs/03_biased_data_splits.md) | IID, label skew (Dirichlet), pathological, quantity skew, natural (per-subject) splits, feature skew, label noise |
-| 4 | [Aggregation strategies](docs/04_aggregation_strategies.md) | FedAvg, FedProx, FedAvgM, FedAdam/Yogi, FedMedian, FedTrimmedAvg, Krum, q-FedAvg, differential privacy; attack experiments |
-| 5 | [Grad-CAM](docs/05_gradcam.md) | Explaining predictions, choosing the layer, sanity checks, what to report, and the iterative process: from errors to a better model (worked example) |
-| 6 | [Human Activity Recognition](docs/06_har.md) | The HAR skeleton data end to end: splitting, training, trust experiments, feature importance |
+| #   | Tutorial                                                    | What you learn                                                                                                                                       |
+| --- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | [Environment setup](docs/01_environment_setup.md)           | uv, `pyproject.toml` / `uv.lock`, CPU vs GPU PyTorch, Windows/WSL2                                                                                   |
+| 2   | [Running Flower](docs/02_running_flower.md)                 | Simulation (`flwr run`) vs. deployment (SuperLink + SuperNodes in separate terminals)                                                                |
+| 3   | [Biased data splits](docs/03_biased_data_splits.md)         | IID, label skew (Dirichlet), pathological, quantity skew, natural (per-subject) splits, feature skew, label noise                                    |
+| 4   | [Aggregation strategies](docs/04_aggregation_strategies.md) | FedAvg, FedProx, FedAvgM, FedAdam/Yogi, FedMedian, FedTrimmedAvg, Krum, q-FedAvg, differential privacy; attack experiments                           |
+| 5   | [Grad-CAM](docs/05_gradcam.md)                              | Explaining predictions, choosing the layer, sanity checks, what to report, and the iterative process: from errors to a better model (worked example) |
+| 6   | [Human Activity Recognition](docs/06_har.md)                | The HAR skeleton data end to end: splitting, training, trust experiments, feature importance                                                         |
 
 ---
 
@@ -142,49 +158,49 @@ AITDM_FLOWER_PROJECT_TUTORIAL/
 
 ## How this maps to the project stages
 
-| Project requirement | Where to start |
-|---|---|
-| *Stage 1 – simulate 3–5 clients with non-IID splits* | `data_splitting/split_data.py` ([tutorial 3](docs/03_biased_data_splits.md)) |
-| *Stage 1 – minimal federated experiment (FedAvg)* | `scripts/run_simulation.sh` ([tutorial 2](docs/02_running_flower.md)) |
-| *Stage 1 – centralised vs. federated comparison* | `python experiments/centralised.py --partitions data/partitions/<split>`: the same model on the pooled client data, evaluated exactly like the federated runs ([tutorial 2](docs/02_running_flower.md#centralised-baseline-and-seeds)) |
-| *Reporting results* | `python experiments/run_seeds.py ...` runs seeds 1, 2, 3; `experiments/summarize.py` prints mean ± std tables. Compare on validation data, report the test set once at the end |
-| *Stage 2 – different aggregation types* | `--run-config "strategy='krum'"` etc. ([tutorial 4](docs/04_aggregation_strategies.md)) |
-| *Stage 2 – differential privacy* | `--run-config "dp-noise-multiplier=1.0"`, ε is logged and saved ([tutorial 4](docs/04_aggregation_strategies.md#5-privacy-central-differential-privacy)) |
-| *Stage 2 – robustness / data poisoning* | `malicious-clients='4'` (model poisoning) or `split_data.py --label-noise` (data poisoning) + robust strategies |
-| *Stage 2 – fairness* | `strategy='qfedavg'`, per-client evaluation, quantity-skew splits |
-| *Improving the model iteratively* | `explainability/error_analysis.py` + Grad-CAM + `loss-weighting='balanced'` ([worked example](docs/05_gradcam.md#the-iterative-process-from-explanation-to-a-better-model)) |
-| *Stage 2 – interpretability* | `python explainability/gradcam.py --run outputs/<run>` ([tutorial 5](docs/05_gradcam.md)); HAR: `explainability/feature_importance.py` ([tutorial 6](docs/06_har.md#5-explain-it)) |
-| *Team work – cross-evaluation* | Each member gets a partition (`client_<i>.npz`) and evaluates the others' models on their own validation data; the shared `test.npz` gives the final numbers |
+| Project requirement                                  | Where to start                                                                                                                                                                                                                         |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| _Stage 1 – simulate 3–5 clients with non-IID splits_ | `data_splitting/split_data.py` ([tutorial 3](docs/03_biased_data_splits.md))                                                                                                                                                           |
+| _Stage 1 – minimal federated experiment (FedAvg)_    | `scripts/run_simulation.sh` ([tutorial 2](docs/02_running_flower.md))                                                                                                                                                                  |
+| _Stage 1 – centralised vs. federated comparison_     | `python experiments/centralised.py --partitions data/partitions/<split>`: the same model on the pooled client data, evaluated exactly like the federated runs ([tutorial 2](docs/02_running_flower.md#centralised-baseline-and-seeds)) |
+| _Reporting results_                                  | `python experiments/run_seeds.py ...` runs seeds 1, 2, 3; `experiments/summarize.py` prints mean ± std tables. Compare on validation data, report the test set once at the end                                                         |
+| _Stage 2 – different aggregation types_              | `--run-config "strategy='krum'"` etc. ([tutorial 4](docs/04_aggregation_strategies.md))                                                                                                                                                |
+| _Stage 2 – differential privacy_                     | `--run-config "dp-noise-multiplier=1.0"`, ε is logged and saved ([tutorial 4](docs/04_aggregation_strategies.md#5-privacy-central-differential-privacy))                                                                               |
+| _Stage 2 – robustness / data poisoning_              | `malicious-clients='4'` (model poisoning) or `split_data.py --label-noise` (data poisoning) + robust strategies                                                                                                                        |
+| _Stage 2 – fairness_                                 | `strategy='qfedavg'`, per-client evaluation, quantity-skew splits                                                                                                                                                                      |
+| _Improving the model iteratively_                    | `explainability/error_analysis.py` + Grad-CAM + `loss-weighting='balanced'` ([worked example](docs/05_gradcam.md#the-iterative-process-from-explanation-to-a-better-model))                                                            |
+| _Stage 2 – interpretability_                         | `python explainability/gradcam.py --run outputs/<run>` ([tutorial 5](docs/05_gradcam.md)); HAR: `explainability/feature_importance.py` ([tutorial 6](docs/06_har.md#5-explain-it))                                                     |
+| _Team work – cross-evaluation_                       | Each member gets a partition (`client_<i>.npz`) and evaluates the others' models on their own validation data; the shared `test.npz` gives the final numbers                                                                           |
 
 ---
 
 ## Common troubleshooting
 
-Most Flower problems are **silent waits**, not crashes: a component waits for one that never comes. 
+Most Flower problems are **silent waits**, not crashes: a component waits for one that never comes.
 
 In depth comments in [Tutorial 2](docs/02_running_flower.md#troubleshooting).
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| On a cluster (SLURM) the server waits forever and the clients find no server | `127.0.0.1` means "this machine", and every job can run on a **different node**: a client looks for the SuperLink on its own node | Run everything in one job on one node (`srun --nodes=1 --cpus-per-task=8 bash scripts/run_deployment_local.sh`). Across nodes: `HOST=0.0.0.0 bash scripts/start_superlink.sh`, then use `<node-name>:8000` (`hostname`) for the SuperNodes and in `~/.flwr/config.toml`. Never train on the login node |
-| `Address already in use` (8000, 9094, ...) | An old SuperLink / SuperNode is still alive, or, on a shared node, another user's | `bash scripts/stop_flower.sh`. On shared nodes ask for `--exclusive` |
-| `FileNotFoundError: .../test.npz not found` | Split not created (or under another name); relative `partitions-dir`; data not on the node running the component; files re-split / deleted during the run | Run `split_data.py` first and pass its folder; use absolute paths (the scripts do); keep data on the shared filesystem, not `/tmp`; write new splits to a new `--out`. Data is never in the repo: see [Data](#data) |
-| `Waiting for nodes to connect: 2 connected (minimum required: 3)` | Fewer SuperNodes than `min-nodes` (simulation defaults to 2 since Flower 1.32) | Start all N SuperNodes; in simulation pass `--federation-config "num-supernodes=N"` (the scripts do) |
-| No client connects after a SuperLink restart | The new SuperLink forgets all nodes; old SuperNodes are rejected (`401`) and stop | Restart the SuperNodes (`run_deployment_terminals.sh` does it by itself) |
-| After Ctrl+C on `flwr run`, the next run waits | Ctrl+C only stops the log stream; the run keeps the clients busy | `flwr ls local-deployment`, then `flwr stop <run-id> local-deployment` |
-| First run "hangs" at `Installing application dependencies...`, or uses old code / another venv | Flower installs GBs of dependencies per run, or a hidden simulation SuperLink from an earlier `flwr run .` is still running | `bash scripts/stop_flower.sh` once; the scripts disable the installation |
-| Run "finished" but no `metrics.json` | The ServerApp crashed; `flwr run` still exits with 0 | Read the traceback; the scripts print `The run FAILED` |
+| Symptom                                                                                        | Cause                                                                                                                                                     | Fix                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| On a cluster (SLURM) the server waits forever and the clients find no server                   | `127.0.0.1` means "this machine", and every job can run on a **different node**: a client looks for the SuperLink on its own node                         | Run everything in one job on one node (`srun --nodes=1 --cpus-per-task=8 bash scripts/run_deployment_local.sh`). Across nodes: `HOST=0.0.0.0 bash scripts/start_superlink.sh`, then use `<node-name>:8000` (`hostname`) for the SuperNodes and in `~/.flwr/config.toml`. Never train on the login node |
+| `Address already in use` (8000, 9094, ...)                                                     | An old SuperLink / SuperNode is still alive, or, on a shared node, another user's                                                                         | `bash scripts/stop_flower.sh`. On shared nodes ask for `--exclusive`                                                                                                                                                                                                                                   |
+| `FileNotFoundError: .../test.npz not found`                                                    | Split not created (or under another name); relative `partitions-dir`; data not on the node running the component; files re-split / deleted during the run | Run `split_data.py` first and pass its folder; use absolute paths (the scripts do); keep data on the shared filesystem, not `/tmp`; write new splits to a new `--out`. Data is never in the repo: see [Data](#data)                                                                                    |
+| `Waiting for nodes to connect: 2 connected (minimum required: 3)`                              | Fewer SuperNodes than `min-nodes` (simulation defaults to 2 since Flower 1.32)                                                                            | Start all N SuperNodes; in simulation pass `--federation-config "num-supernodes=N"` (the scripts do)                                                                                                                                                                                                   |
+| No client connects after a SuperLink restart                                                   | The new SuperLink forgets all nodes; old SuperNodes are rejected (`401`) and stop                                                                         | Restart the SuperNodes (`run_deployment_terminals.sh` does it by itself)                                                                                                                                                                                                                               |
+| After Ctrl+C on `flwr run`, the next run waits                                                 | Ctrl+C only stops the log stream; the run keeps the clients busy                                                                                          | `flwr ls local-deployment`, then `flwr stop <run-id> local-deployment`                                                                                                                                                                                                                                 |
+| First run "hangs" at `Installing application dependencies...`, or uses old code / another venv | Flower installs GBs of dependencies per run, or a hidden simulation SuperLink from an earlier `flwr run .` is still running                               | `bash scripts/stop_flower.sh` once; the scripts disable the installation                                                                                                                                                                                                                               |
+| Run "finished" but no `metrics.json`                                                           | The ServerApp crashed; `flwr run` still exits with 0                                                                                                      | Read the traceback; the scripts print `The run FAILED`                                                                                                                                                                                                                                                 |
 
 ---
 
 ## Useful links
 
-* Flower docs: <https://flower.ai/docs/framework/>
-  * [Quickstart PyTorch](https://flower.ai/docs/framework/tutorial-quickstart-pytorch.html)
-  * [Run simulations](https://flower.ai/docs/framework/how-to-run-simulations.html)
-  * [Run with the Deployment Engine](https://flower.ai/docs/framework/how-to-run-flower-with-deployment-engine.html)
-  * [Flower Datasets partitioners](https://flower.ai/docs/datasets/ref-api/flwr_datasets.partitioner.html)
-* MONAI: <https://docs.monai.io/>
-* MedMNIST (datasets used in the examples): <https://medmnist.com/>
-* Federated learning survey: <https://arxiv.org/abs/1907.09693>
-* DP book (Dwork & Roth): <https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf>
+- Flower docs: <https://flower.ai/docs/framework/>
+  - [Quickstart PyTorch](https://flower.ai/docs/framework/tutorial-quickstart-pytorch.html)
+  - [Run simulations](https://flower.ai/docs/framework/how-to-run-simulations.html)
+  - [Run with the Deployment Engine](https://flower.ai/docs/framework/how-to-run-flower-with-deployment-engine.html)
+  - [Flower Datasets partitioners](https://flower.ai/docs/datasets/ref-api/flwr_datasets.partitioner.html)
+- MONAI: <https://docs.monai.io/>
+- MedMNIST (datasets used in the examples): <https://medmnist.com/>
+- Federated learning survey: <https://arxiv.org/abs/1907.09693>
+- DP book (Dwork & Roth): <https://www.cis.upenn.edu/~aaroth/Papers/privacybook.pdf>
